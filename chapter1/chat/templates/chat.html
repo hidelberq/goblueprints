@@ -36,7 +36,7 @@
             if (!window["WebSocket"]) {
                 alert("エラー: WebSocketに対応していないブラウザです。")
             } else {
-                socket = new WebSocket("ws://localhost:8081/room");
+                socket = new WebSocket("ws://{{.Host}}/room");
                 socket.onclose = function (ev) { alert("接続が終了しました。") };
                 socket.onmessage = function (ev) { messages.append($("<li>").text(ev.data)) };
             }
