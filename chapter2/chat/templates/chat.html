@@ -29,7 +29,10 @@
                     return false;
                 }
 
-                socket.send(msgbox.val());
+                var data = JSON.stringify({
+                    Message: msgbox.val()
+                });
+                socket.send(data);
                 msgbox.val("");
                 return false
             });
@@ -39,7 +42,17 @@
             } else {
                 socket = new WebSocket("ws://{{.Host}}/room");
                 socket.onclose = function (ev) { alert("接続が終了しました。") };
-                socket.onmessage = function (ev) { messages.append($("<li>").text(ev.data)) };
+                socket.onmessage = function (ev) {
+                    var data = JSON.parse(ev.data);
+                    messages.append(
+                        $("<li>")
+                            .append(
+                                $("<strong>").text(data.Name + ": "),
+                                $("<span>").text(data.Message),
+                                $("<i>").text(" (" + data.When + ")")
+                            )
+                    );
+                };
             }
         })
     </script>

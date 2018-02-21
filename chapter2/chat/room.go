@@ -6,10 +6,16 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/hidelbreq/goblueprints/chapter1/trace"
+	"github.com/stretchr/objx"
+)
+
+const (
+	socketBufferSize  = 1024
+	messageBufferSize = 256
 )
 
 type room struct {
-	forward chan []byte
+	forward chan *message
 	join    chan *client
 	leave   chan *client
 	clients map[*client]bool
@@ -18,18 +24,13 @@ type room struct {
 
 func newRoom() *room {
 	return &room{
-		forward: make(chan []byte),
+		forward: make(chan *message, messageBufferSize),
 		join:    make(chan *client),
 		leave:   make(chan *client),
 		clients: make(map[*client]bool),
 		tracer:  trace.Off(),
 	}
 }
-
-const (
-	socketBufferSize  = 1024
-	messageBufferSize = 256
-)
 
 var upgrader = &websocket.Upgrader{
 	ReadBufferSize:  socketBufferSize,
@@ -43,10 +44,17 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	authCookie, err := req.Cookie("auth")
+	if err != nil {
+		log.Fatalln("クッキーの取得に失敗しました")
+		return
+	}
+
 	client := &client{
-		socket: socket,
-		send:   make(chan []byte),
-		room:   r,
+		socket:   socket,
+		send:     make(chan *message, messageBufferSize),
+		room:     r,
+		userData: objx.MustFromBase64(authCookie.Value),
 	}
 	r.join <- client
 	defer func() { r.leave <- client }()
@@ -65,7 +73,7 @@ func (r *room) run() {
 			close(client.send)
 			r.tracer.Trace("クライアントが退室しました")
 		case msg := <-r.forward:
-			r.tracer.Trace("メッセージを受信しました: ", string(msg))
+			r.tracer.Trace("メッセージを受信しました: ", msg.Message)
 			for client := range r.clients {
 				select {
 				case client.send <- msg:

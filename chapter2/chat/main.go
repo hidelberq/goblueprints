@@ -28,8 +28,8 @@ func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"Host": r.Host,
 	}
 
-	if authCo0kie, err := r.Cookie("auth"); err == nil {
-		data["UserData"] = objx.MustFromBase64(authCo0kie.Value)
+	if authCookie, err := r.Cookie("auth"); err == nil {
+		data["UserData"] = objx.MustFromBase64(authCookie.Value)
 	}
 	t.templ.Execute(w, data)
 }
