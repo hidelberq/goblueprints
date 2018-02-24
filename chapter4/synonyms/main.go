@@ -24,7 +24,7 @@ func main() {
 		}
 
 		if len(syns) == 0 {
-			log.Fatalf("%sには類義語はありませんでした", word)
+			log.Fatalf("%qには類義語はありませんでした", word)
 		}
 
 		for _, syn := range syns {
