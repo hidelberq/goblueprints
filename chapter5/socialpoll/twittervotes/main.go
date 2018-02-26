@@ -132,20 +132,22 @@ func main() {
 		stopChan <- struct{}{}
 		closeConn()
 	}()
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	if err := dialdb(); err != nil {
 		log.Fatalln("MongoDBへのダイアルに失敗しました:", err)
 	}
+
 	defer closedb()
 
 	votes := make(chan string)
 	publisherStoppedChan := publishVotes(votes)
 	twitterStoppedChan := startTwitterStream(stopChan, votes)
 
+	// Streaming API とのコネクションをを1分に一度切断する goroutine
 	go func() {
 		for {
-			time.Sleep(1 * time.Second)
+			time.Sleep(1 * time.Minute)
 			closeConn()
 			stoplock.Lock()
 			if stop {
